@@ -1,0 +1,219 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('audit_logs', function (Blueprint $table) {
+
+            $table->id();
+
+            /*
+            |--------------------------------------------------------------------------
+            | User Information
+            |--------------------------------------------------------------------------
+            */
+
+            $table->foreignId('user_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->string('user_type')
+                ->nullable();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Event Information
+            |--------------------------------------------------------------------------
+            */
+
+            $table->string('event_type');
+
+            $table->string('module');
+
+            $table->string('action');
+
+            $table->string('title')
+                ->nullable();
+
+            $table->text('description')
+                ->nullable();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Audited Entity
+            |--------------------------------------------------------------------------
+            */
+
+            $table->string('auditable_type');
+
+            $table->unsignedBigInteger('auditable_id');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Change Tracking
+            |--------------------------------------------------------------------------
+            */
+
+            $table->json('old_values')
+                ->nullable();
+
+            $table->json('new_values')
+                ->nullable();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Security Information
+            |--------------------------------------------------------------------------
+            */
+
+            $table->ipAddress('ip_address')
+                ->nullable();
+
+            $table->text('user_agent')
+                ->nullable();
+
+            $table->string('request_method')
+                ->nullable();
+
+            $table->string('request_url')
+                ->nullable();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Request Data
+            |--------------------------------------------------------------------------
+            */
+
+            $table->json('request_payload')
+                ->nullable();
+
+            $table->json('response_payload')
+                ->nullable();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Related References
+            |--------------------------------------------------------------------------
+            */
+
+            $table->foreignId('lead_id')
+                ->nullable()
+                ->constrained('leads')
+                ->nullOnDelete();
+
+            $table->foreignId('appointment_id')
+                ->nullable()
+                ->constrained('appointments')
+                ->nullOnDelete();
+
+            $table->foreignId('measurement_id')
+                ->nullable()
+                ->constrained('measurements')
+                ->nullOnDelete();
+
+            $table->foreignId('order_id')
+                ->nullable()
+                ->constrained('orders')
+                ->nullOnDelete();
+
+            $table->foreignId('delivery_id')
+                ->nullable()
+                ->constrained('deliveries')
+                ->nullOnDelete();
+
+            $table->foreignId('commission_id')
+                ->nullable()
+                ->constrained('commissions')
+                ->nullOnDelete();
+
+            $table->foreignId('wallet_id')
+                ->nullable()
+                ->constrained('wallets')
+                ->nullOnDelete();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Severity
+            |--------------------------------------------------------------------------
+            */
+
+            $table->enum('severity', [
+                'low',
+                'medium',
+                'high',
+                'critical'
+            ])->default('medium');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Status
+            |--------------------------------------------------------------------------
+            */
+
+            $table->enum('status', [
+                'success',
+                'failed',
+                'warning'
+            ])->default('success');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Additional Information
+            |--------------------------------------------------------------------------
+            */
+
+            $table->string('session_id')
+                ->nullable();
+
+            $table->json('meta')
+                ->nullable();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Audit Timestamp
+            |--------------------------------------------------------------------------
+            */
+
+            $table->timestamp('audited_at')
+                ->useCurrent();
+
+            $table->timestamps();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Indexes
+            |--------------------------------------------------------------------------
+            */
+
+            $table->index('user_id');
+            $table->index('event_type');
+            $table->index('module');
+            $table->index('action');
+            $table->index('severity');
+            $table->index('status');
+            $table->index('audited_at');
+
+            $table->index([
+                'auditable_type',
+                'auditable_id'
+            ]);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('audit_logs');
+    }
+};
