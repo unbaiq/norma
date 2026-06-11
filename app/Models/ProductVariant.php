@@ -6,52 +6,40 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Product extends Model
+class ProductVariant extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'category_id',
+        'product_id',
 
-        'product_code',
+        'variant_code',
 
         'sku',
 
         'name',
 
-        'slug',
+        'size',
 
-        'description',
+        'color',
 
-        'short_description',
+        'side',
 
-        'brand',
+        'support_level',
 
-        'product_type',
-
-        'unit',
+        'measurement_range',
 
         'mrp',
 
         'selling_price',
 
-        'tax_percentage',
-
-        'hsn_code',
+        'stock_quantity',
 
         'weight',
 
-        'length',
-        'width',
-        'height',
-
-        'is_featured',
-
-        'is_measurement_required',
-
         'status',
 
-        'thumbnail',
+        'is_default',
 
         'remarks',
 
@@ -61,15 +49,10 @@ class Product extends Model
     protected $casts = [
         'mrp' => 'decimal:2',
         'selling_price' => 'decimal:2',
-        'tax_percentage' => 'decimal:2',
-
+        'stock_quantity' => 'decimal:2',
         'weight' => 'decimal:2',
-        'length' => 'decimal:2',
-        'width' => 'decimal:2',
-        'height' => 'decimal:2',
 
-        'is_featured' => 'boolean',
-        'is_measurement_required' => 'boolean',
+        'is_default' => 'boolean',
 
         'meta' => 'array',
     ];
@@ -80,46 +63,20 @@ class Product extends Model
     |--------------------------------------------------------------------------
     */
 
-    public function category()
+    public function product()
     {
-        return $this->belongsTo(
-            ProductCategory::class,
-            'category_id'
-        );
-    }
-
-    public function variants()
-    {
-        return $this->hasMany(
-            ProductVariant::class
-        );
-    }
-
-    public function images()
-    {
-        return $this->hasMany(
-            ProductImage::class
-        );
-    }
-
-    public function instructions()
-    {
-        return $this->hasMany(
-            ProductInstruction::class
-        );
-    }
-
-    public function inventories()
-    {
-        return $this->hasMany(
-            Inventory::class
-        );
+        return $this->belongsTo(Product::class);
     }
 
     public function orderItems()
     {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    public function recommendations()
+    {
         return $this->hasMany(
-            OrderItem::class
+            ProductRecommendation::class
         );
     }
 
@@ -134,9 +91,9 @@ class Product extends Model
         return $query->where('status', 'active');
     }
 
-    public function scopeFeatured($query)
+    public function scopeDefault($query)
     {
-        return $query->where('is_featured', true);
+        return $query->where('is_default', true);
     }
 
     /*

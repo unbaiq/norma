@@ -4,49 +4,46 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Notification extends Model
+class EmailLog extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
-        'notification_code',
-
         'user_id',
 
-        'title',
-        'message',
+        'email_code',
 
-        'type',
+        'recipient_email',
+        'recipient_name',
 
-        'channel',
+        'subject',
 
-        'reference_type',
-        'reference_id',
+        'template_name',
 
-        'priority',
+        'email_type',
 
         'status',
 
-        'is_read',
-        'read_at',
+        'sent_by',
 
-        'scheduled_at',
         'sent_at',
+        'delivered_at',
+        'opened_at',
 
-        'action_url',
+        'error_message',
+
+        'attachments',
 
         'meta',
     ];
 
     protected $casts = [
-        'is_read'      => 'boolean',
-
-        'read_at'      => 'datetime',
-        'scheduled_at' => 'datetime',
         'sent_at'      => 'datetime',
+        'delivered_at' => 'datetime',
+        'opened_at'    => 'datetime',
 
+        'attachments'  => 'array',
         'meta'         => 'array',
     ];
 
@@ -61,14 +58,12 @@ class Notification extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function reference()
+    public function sender()
     {
-        return $this->morphTo();
-    }
-
-    public function logs()
-    {
-        return $this->hasMany(NotificationLog::class);
+        return $this->belongsTo(
+            User::class,
+            'sent_by'
+        );
     }
 
     /*
@@ -77,24 +72,24 @@ class Notification extends Model
     |--------------------------------------------------------------------------
     */
 
-    public function scopeUnread($query)
-    {
-        return $query->where('is_read', false);
-    }
-
-    public function scopeRead($query)
-    {
-        return $query->where('is_read', true);
-    }
-
     public function scopeSent($query)
     {
         return $query->where('status', 'sent');
     }
 
-    public function scopePending($query)
+    public function scopeDelivered($query)
     {
-        return $query->where('status', 'pending');
+        return $query->where('status', 'delivered');
+    }
+
+    public function scopeOpened($query)
+    {
+        return $query->whereNotNull('opened_at');
+    }
+
+    public function scopeFailed($query)
+    {
+        return $query->where('status', 'failed');
     }
 
     /*
@@ -103,8 +98,13 @@ class Notification extends Model
     |--------------------------------------------------------------------------
     */
 
-    public function getIsUnreadAttribute()
+    public function getIsOpenedAttribute()
     {
-        return !$this->is_read;
+        return !is_null($this->opened_at);
+    }
+
+    public function getIsDeliveredAttribute()
+    {
+        return !is_null($this->delivered_at);
     }
 }

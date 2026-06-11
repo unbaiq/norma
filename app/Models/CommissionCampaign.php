@@ -6,35 +6,32 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Commission extends Model
+class CommissionCampaign extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'commission_code',
+        'campaign_code',
 
-        'user_id',
+        'name',
+        'description',
 
-        'commission_rule_id',
-        'commission_campaign_id',
+        'campaign_type',
 
-        'reference_type',
-        'reference_id',
+        'start_date',
+        'end_date',
 
-        'commission_type',
+        'target_value',
 
         'commission_percentage',
-
-        'base_amount',
-        'commission_amount',
+        'bonus_amount',
 
         'status',
 
-        'generated_at',
-        'approved_at',
-        'paid_at',
-
+        'created_by',
         'approved_by',
+
+        'approved_at',
 
         'remarks',
 
@@ -42,13 +39,14 @@ class Commission extends Model
     ];
 
     protected $casts = [
-        'commission_percentage' => 'decimal:2',
-        'base_amount'           => 'decimal:2',
-        'commission_amount'     => 'decimal:2',
+        'start_date'            => 'date',
+        'end_date'              => 'date',
 
-        'generated_at'          => 'datetime',
+        'target_value'          => 'decimal:2',
+        'commission_percentage' => 'decimal:2',
+        'bonus_amount'          => 'decimal:2',
+
         'approved_at'           => 'datetime',
-        'paid_at'               => 'datetime',
 
         'meta'                  => 'array',
     ];
@@ -59,21 +57,11 @@ class Commission extends Model
     |--------------------------------------------------------------------------
     */
 
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function commissionRule()
-    {
-        return $this->belongsTo(CommissionRule::class);
-    }
-
-    public function campaign()
+    public function creator()
     {
         return $this->belongsTo(
-            CommissionCampaign::class,
-            'commission_campaign_id'
+            User::class,
+            'created_by'
         );
     }
 
@@ -85,15 +73,19 @@ class Commission extends Model
         );
     }
 
-    public function reference()
-    {
-        return $this->morphTo();
-    }
-
-    public function transactions()
+    public function commissions()
     {
         return $this->hasMany(
-            CommissionTransaction::class
+            Commission::class,
+            'commission_campaign_id'
+        );
+    }
+
+    public function bonusCommissions()
+    {
+        return $this->hasMany(
+            BonusCommission::class,
+            'campaign_id'
         );
     }
 
@@ -103,19 +95,23 @@ class Commission extends Model
     |--------------------------------------------------------------------------
     */
 
-    public function scopePending($query)
+    public function scopeActive($query)
     {
-        return $query->where('status', 'pending');
+        return $query->where('status', 'active');
     }
 
-    public function scopeApproved($query)
+    public function scopeUpcoming($query)
     {
-        return $query->where('status', 'approved');
+        return $query->whereDate(
+            'start_date',
+            '>',
+            now()
+        );
     }
 
-    public function scopePaid($query)
+    public function scopeCompleted($query)
     {
-        return $query->where('status', 'paid');
+        return $query->where('status', 'completed');
     }
 
     /*
@@ -124,11 +120,18 @@ class Commission extends Model
     |--------------------------------------------------------------------------
     */
 
-    public function getFormattedCommissionAttribute()
+    public function getIsRunningAttribute()
     {
-        return number_format(
-            $this->commission_amount,
-            2
+        return now()->between(
+            $this->start_date,
+            $this->end_date
+        );
+    }
+
+    public function getCampaignDurationAttribute()
+    {
+        return $this->start_date?->diffInDays(
+            $this->end_date
         );
     }
 }

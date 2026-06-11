@@ -6,46 +6,38 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Notification extends Model
+class UserKyc extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'notification_code',
-
         'user_id',
 
-        'title',
-        'message',
+        'kyc_number',
 
-        'type',
-
-        'channel',
-
-        'reference_type',
-        'reference_id',
-
-        'priority',
+        'kyc_type',
 
         'status',
 
-        'is_read',
-        'read_at',
+        'submitted_at',
+        'verified_at',
+        'rejected_at',
 
-        'scheduled_at',
-        'sent_at',
+        'verified_by',
 
-        'action_url',
+        'risk_score',
+
+        'remarks',
 
         'meta',
     ];
 
     protected $casts = [
-        'is_read'      => 'boolean',
+        'submitted_at' => 'datetime',
+        'verified_at'  => 'datetime',
+        'rejected_at'  => 'datetime',
 
-        'read_at'      => 'datetime',
-        'scheduled_at' => 'datetime',
-        'sent_at'      => 'datetime',
+        'risk_score'   => 'decimal:2',
 
         'meta'         => 'array',
     ];
@@ -61,14 +53,14 @@ class Notification extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function reference()
+    public function verifier()
     {
-        return $this->morphTo();
+        return $this->belongsTo(User::class, 'verified_by');
     }
 
-    public function logs()
+    public function documents()
     {
-        return $this->hasMany(NotificationLog::class);
+        return $this->hasMany(UserDocument::class, 'user_id', 'user_id');
     }
 
     /*
@@ -77,24 +69,19 @@ class Notification extends Model
     |--------------------------------------------------------------------------
     */
 
-    public function scopeUnread($query)
-    {
-        return $query->where('is_read', false);
-    }
-
-    public function scopeRead($query)
-    {
-        return $query->where('is_read', true);
-    }
-
-    public function scopeSent($query)
-    {
-        return $query->where('status', 'sent');
-    }
-
     public function scopePending($query)
     {
         return $query->where('status', 'pending');
+    }
+
+    public function scopeVerified($query)
+    {
+        return $query->where('status', 'verified');
+    }
+
+    public function scopeRejected($query)
+    {
+        return $query->where('status', 'rejected');
     }
 
     /*
@@ -103,8 +90,8 @@ class Notification extends Model
     |--------------------------------------------------------------------------
     */
 
-    public function getIsUnreadAttribute()
+    public function getIsVerifiedAttribute()
     {
-        return !$this->is_read;
+        return $this->status === 'verified';
     }
 }

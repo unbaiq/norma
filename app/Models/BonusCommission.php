@@ -6,31 +6,27 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Commission extends Model
+class BonusCommission extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'commission_code',
+        'bonus_code',
 
         'user_id',
+        'commission_id',
+        'campaign_id',
 
-        'commission_rule_id',
-        'commission_campaign_id',
+        'bonus_type',
 
-        'reference_type',
-        'reference_id',
+        'target_value',
+        'achieved_value',
 
-        'commission_type',
-
-        'commission_percentage',
-
-        'base_amount',
-        'commission_amount',
+        'bonus_amount',
 
         'status',
 
-        'generated_at',
+        'earned_at',
         'approved_at',
         'paid_at',
 
@@ -42,15 +38,15 @@ class Commission extends Model
     ];
 
     protected $casts = [
-        'commission_percentage' => 'decimal:2',
-        'base_amount'           => 'decimal:2',
-        'commission_amount'     => 'decimal:2',
+        'target_value'   => 'decimal:2',
+        'achieved_value' => 'decimal:2',
+        'bonus_amount'   => 'decimal:2',
 
-        'generated_at'          => 'datetime',
-        'approved_at'           => 'datetime',
-        'paid_at'               => 'datetime',
+        'earned_at'      => 'datetime',
+        'approved_at'    => 'datetime',
+        'paid_at'        => 'datetime',
 
-        'meta'                  => 'array',
+        'meta'           => 'array',
     ];
 
     /*
@@ -64,16 +60,16 @@ class Commission extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function commissionRule()
+    public function commission()
     {
-        return $this->belongsTo(CommissionRule::class);
+        return $this->belongsTo(Commission::class);
     }
 
     public function campaign()
     {
         return $this->belongsTo(
             CommissionCampaign::class,
-            'commission_campaign_id'
+            'campaign_id'
         );
     }
 
@@ -82,18 +78,6 @@ class Commission extends Model
         return $this->belongsTo(
             User::class,
             'approved_by'
-        );
-    }
-
-    public function reference()
-    {
-        return $this->morphTo();
-    }
-
-    public function transactions()
-    {
-        return $this->hasMany(
-            CommissionTransaction::class
         );
     }
 
@@ -124,10 +108,10 @@ class Commission extends Model
     |--------------------------------------------------------------------------
     */
 
-    public function getFormattedCommissionAttribute()
+    public function getFormattedBonusAmountAttribute()
     {
         return number_format(
-            $this->commission_amount,
+            $this->bonus_amount,
             2
         );
     }

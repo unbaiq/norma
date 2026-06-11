@@ -6,59 +6,48 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class SupportTicket extends Model
+class FraudCase extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'ticket_code',
+        'case_code',
 
         'user_id',
+        'lead_id',
+        'order_id',
 
-        'assigned_to',
+        'fraud_rule_id',
 
-        'category',
+        'case_type',
 
-        'subject',
-
-        'description',
-
-        'priority',
+        'risk_score',
 
         'status',
 
-        'source',
+        'description',
 
-        'sla_rule_id',
+        'reported_by',
 
-        'opened_at',
+        'assigned_to',
 
-        'first_response_at',
-
+        'detected_at',
         'resolved_at',
-
-        'closed_at',
 
         'resolution_notes',
 
-        'rating',
-
-        'feedback',
-
-        'remarks',
+        'action_taken',
 
         'meta',
     ];
 
     protected $casts = [
-        'opened_at'         => 'datetime',
-        'first_response_at' => 'datetime',
-        'resolved_at'       => 'datetime',
-        'closed_at'         => 'datetime',
+        'risk_score'  => 'decimal:2',
 
-        'rating'            => 'decimal:2',
+        'detected_at' => 'datetime',
+        'resolved_at' => 'datetime',
 
-        'meta'              => 'array',
+        'meta'        => 'array',
     ];
 
     /*
@@ -72,6 +61,29 @@ class SupportTicket extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function lead()
+    {
+        return $this->belongsTo(Lead::class);
+    }
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    public function fraudRule()
+    {
+        return $this->belongsTo(FraudRule::class);
+    }
+
+    public function reportedBy()
+    {
+        return $this->belongsTo(
+            User::class,
+            'reported_by'
+        );
+    }
+
     public function assignedTo()
     {
         return $this->belongsTo(
@@ -80,25 +92,9 @@ class SupportTicket extends Model
         );
     }
 
-    public function slaRule()
+    public function logs()
     {
-        return $this->belongsTo(
-            SlaRule::class
-        );
-    }
-
-    public function messages()
-    {
-        return $this->hasMany(
-            TicketMessage::class
-        );
-    }
-
-    public function attachments()
-    {
-        return $this->hasMany(
-            TicketAttachment::class
-        );
+        return $this->hasMany(FraudLog::class);
     }
 
     /*
@@ -117,9 +113,9 @@ class SupportTicket extends Model
         return $query->where('status', 'resolved');
     }
 
-    public function scopeHighPriority($query)
+    public function scopeHighRisk($query)
     {
-        return $query->where('priority', 'high');
+        return $query->where('risk_score', '>=', 80);
     }
 
     /*
@@ -128,11 +124,8 @@ class SupportTicket extends Model
     |--------------------------------------------------------------------------
     */
 
-    public function getIsClosedAttribute()
+    public function getIsHighRiskAttribute()
     {
-        return in_array(
-            $this->status,
-            ['resolved', 'closed']
-        );
+        return $this->risk_score >= 80;
     }
 }

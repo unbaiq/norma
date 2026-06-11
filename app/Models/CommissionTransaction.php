@@ -4,50 +4,44 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Notification extends Model
+class CommissionTransaction extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
-        'notification_code',
-
+        'commission_id',
         'user_id',
 
-        'title',
-        'message',
+        'transaction_code',
 
-        'type',
-
-        'channel',
+        'transaction_type',
 
         'reference_type',
         'reference_id',
 
-        'priority',
+        'amount',
+
+        'opening_balance',
+        'closing_balance',
 
         'status',
 
-        'is_read',
-        'read_at',
+        'transaction_date',
 
-        'scheduled_at',
-        'sent_at',
-
-        'action_url',
+        'remarks',
 
         'meta',
     ];
 
     protected $casts = [
-        'is_read'      => 'boolean',
+        'amount' => 'decimal:2',
+        'opening_balance' => 'decimal:2',
+        'closing_balance' => 'decimal:2',
 
-        'read_at'      => 'datetime',
-        'scheduled_at' => 'datetime',
-        'sent_at'      => 'datetime',
+        'transaction_date' => 'datetime',
 
-        'meta'         => 'array',
+        'meta' => 'array',
     ];
 
     /*
@@ -55,6 +49,11 @@ class Notification extends Model
     | Relationships
     |--------------------------------------------------------------------------
     */
+
+    public function commission()
+    {
+        return $this->belongsTo(Commission::class);
+    }
 
     public function user()
     {
@@ -66,30 +65,25 @@ class Notification extends Model
         return $this->morphTo();
     }
 
-    public function logs()
-    {
-        return $this->hasMany(NotificationLog::class);
-    }
-
     /*
     |--------------------------------------------------------------------------
     | Scopes
     |--------------------------------------------------------------------------
     */
 
-    public function scopeUnread($query)
+    public function scopeCredit($query)
     {
-        return $query->where('is_read', false);
+        return $query->where('transaction_type', 'credit');
     }
 
-    public function scopeRead($query)
+    public function scopeDebit($query)
     {
-        return $query->where('is_read', true);
+        return $query->where('transaction_type', 'debit');
     }
 
-    public function scopeSent($query)
+    public function scopeSuccess($query)
     {
-        return $query->where('status', 'sent');
+        return $query->where('status', 'success');
     }
 
     public function scopePending($query)
@@ -103,8 +97,8 @@ class Notification extends Model
     |--------------------------------------------------------------------------
     */
 
-    public function getIsUnreadAttribute()
+    public function getFormattedAmountAttribute()
     {
-        return !$this->is_read;
+        return number_format($this->amount, 2);
     }
 }
